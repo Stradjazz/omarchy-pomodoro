@@ -19,7 +19,7 @@ A pomodoro timer for the [Omarchy](https://omarchy.org) bar with a built-in task
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/stradjazz/omarchy-pomodoro.git --enable
+omarchy plugin add https://github.com/Stradjazz/omarchy-pomodoro.git --enable
 ```
 
 Optional keybindings for `~/.config/hypr/bindings.lua`:
