@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "stradjazz.pomodoro",
+  "name": "Pomodoro",
+  "version": "2.0.0",
+  "author": "stradjazz",
+  "description": "Pomodoro focus timer with a built-in task list, daily goal, and focus history",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Pomodoro",
+    "description": "Pomodoro timer + tasks: left = start/pause, middle = skip, right = task panel",
+    "category": "Time",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "workMinutes": 25,
+      "breakMinutes": 5,
+      "longBreakMinutes": 15,
+      "longBreakEvery": 4,
+      "dailyGoal": 8,
+      "autoStartBreaks": true,
+      "autoStartFocus": true,
+      "sound": true,
+      "showTaskInBar": false
+    },
+    "schema": [
+      { "key": "workMinutes", "type": "number", "label": "Focus minutes" },
+      { "key": "breakMinutes", "type": "number", "label": "Short break minutes" },
+      { "key": "longBreakMinutes", "type": "number", "label": "Long break minutes" },
+      { "key": "longBreakEvery", "type": "number", "label": "Long break after N focus sessions" },
+      { "key": "dailyGoal", "type": "number", "label": "Daily goal (pomodoros)" },
+      { "key": "autoStartBreaks", "type": "boolean", "label": "Start breaks automatically" },
+      { "key": "autoStartFocus", "type": "boolean", "label": "Start focus automatically after a break" },
+      { "key": "sound", "type": "boolean", "label": "Play a sound at the end of each phase" },
+      { "key": "showTaskInBar", "type": "boolean", "label": "Show the current task next to the timer" }
+    ]
+  }
+}
