@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "stradjazz.pomodoro",
-  "name": "Pomodoro",
+  "name": "Pomodoro Task Manager",
   "version": "2.0.0",
   "author": "stradjazz",
   "description": "Pomodoro focus timer with a built-in task list, daily goal, and focus history",
@@ -13,7 +13,7 @@
     "barWidget": "Widget.qml"
   },
   "barWidget": {
-    "displayName": "Pomodoro",
+    "displayName": "Pomodoro Task Manager",
     "description": "Pomodoro timer + tasks: left = start/pause, middle = skip, right = task panel",
     "category": "Time",
     "allowMultiple": false,

@@ -1,4 +1,4 @@
-# Pomodoro for Omarchy
+# Pomodoro Task Manager for Omarchy
 
 A pomodoro timer for the [Omarchy](https://omarchy.org) bar with a built-in task list, daily goal, and focus history.
 
