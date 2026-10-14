@@ -157,17 +157,12 @@ BarWidget {
     notify("Focus session done", lines.join("\n"), "complete")
   }
 
-  // Third-party widgets get the bar's plugin facade, which has run() but
-  // no shellQuote(), so quote here.
-  function shellQuote(value) {
-    return "'" + String(value).replace(/'/g, "'\\''") + "'"
-  }
-
+  // Task titles end up in the body, so pass argv straight to the programs
+  // with no shell in between — there is nothing to quote or escape.
   function notify(title, body, soundName) {
-    if (!root.bar) return
-    var cmd = "notify-send -a Pomodoro -i alarm-symbolic " + shellQuote(title) + " " + shellQuote(body)
-    if (root.sound) cmd += "; paplay /usr/share/sounds/freedesktop/stereo/" + soundName + ".oga"
-    root.bar.run(cmd)
+    Quickshell.execDetached(["notify-send", "-a", "Pomodoro", "-i", "alarm-symbolic", "--", String(title), String(body)])
+    if (root.sound)
+      Quickshell.execDetached(["paplay", "/usr/share/sounds/freedesktop/stereo/" + soundName + ".oga"])
   }
 
   // ---- Timer actions
