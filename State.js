@@ -14,6 +14,14 @@ var phaseMs = 0         // full length of the current phase, for progress
 var paused = false
 var completed = 0       // focus sessions finished since the last reset
 
+// ---- Focus mode: silence notifications (Omarchy's do-not-disturb) while a
+//      focus session is running.
+var focusMode = false
+var dndOwned = false    // we switched DND on, so we are the ones to switch it off
+var dndChecked = false  // this running stretch already decided whether to silence
+var dndBusy = false     // a DND query or change is in flight
+var dndBusySince = 0
+
 // ---- Tasks
 // [{ id, title, estimate, pomodoros, done, created, doneAt }]
 var tasks = []
@@ -252,6 +260,8 @@ function serialize() {
       phase: phase, longBreak: longBreak, endsAt: endsAt, remainingMs: remainingMs,
       phaseMs: phaseMs, paused: paused, completed: completed
     },
+    focusMode: focusMode,
+    dndOwned: dndOwned,
     tasks: tasks,
     activeId: activeId,
     history: history
@@ -273,6 +283,8 @@ function restore(raw) {
     paused = !!tm.paused
   }
   completed = Number(tm.completed) || 0
+  focusMode = data.focusMode === true
+  dndOwned = data.dndOwned === true
 
   tasks = Array.isArray(data.tasks) ? data.tasks.filter(function(t) {
     return t && typeof t.id === "string" && typeof t.title === "string"

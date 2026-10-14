@@ -10,6 +10,10 @@ import "State.js" as S
 //   middle click = skip to the next phase
 //   right click  = open the panel (timer, tasks, today's stats)
 //
+// Focus mode turns on Omarchy's do-not-disturb while a focus session is
+// running and turns it off again on a break, pause, or reset. If DND was
+// already on when the session started, it is left alone.
+//
 // The timer and tasks live in State.js so every monitor's bar shows the same
 // thing; this widget drives the clock, writes the state file, and hosts the
 // panel. State survives shell restarts: tasks, history, and a running timer
@@ -39,6 +43,8 @@ BarWidget {
   property int secondsLeft: 0
   property real progress: 0
   property int completed: 0
+  property bool focusMode: false
+  property bool silencing: false
 
   property var tasks: []
   property string activeId: ""
@@ -59,7 +65,8 @@ BarWidget {
   readonly property string clockText: formatClock(phase === "idle" ? workMinutes * 60 : secondsLeft)
   readonly property string barTask: showTaskInBar && activeTask && phase === "work"
     ? "  " + truncate(activeTask.title, 22) : ""
-  readonly property string label: phase === "idle" ? icon : icon + " " + clockText + barTask
+  readonly property string silenceMark: silencing ? " 󰂛" : ""
+  readonly property string label: (phase === "idle" ? icon : icon + " " + clockText + barTask) + silenceMark
   // Which focus session of the current set this is (1-based), for the dots.
   readonly property int cyclePosition: completed % longBreakEvery
 
@@ -86,6 +93,9 @@ BarWidget {
     paused = S.paused
     longBreak = S.longBreak
     completed = S.completed
+    focusMode = S.focusMode
+    silencing = S.dndOwned
+    syncDnd()
     var ms = S.phase === "idle" ? 0 : (S.paused ? S.remainingMs : S.endsAt - Date.now())
     secondsLeft = Math.max(0, Math.ceil(ms / 1000))
     progress = S.phase === "idle" || S.phaseMs <= 0 ? 0 : Math.max(0, Math.min(1, 1 - ms / S.phaseMs))
@@ -143,6 +153,69 @@ BarWidget {
     save()
   }
 
+  // ---- Focus mode (do-not-disturb)
+  //
+  // Runs on every tick from every monitor's instance; the shared flags in
+  // State.js make sure only one of them talks to the notification service.
+
+  function syncDnd() {
+    // A query that never came back (its instance went away with a monitor).
+    if (S.dndBusy && Date.now() - S.dndBusySince > 10000) S.dndBusy = false
+    if (S.dndBusy) return
+    var want = S.loaded && S.focusMode && S.phase === "work" && !S.paused
+    if (want) {
+      if (S.dndOwned || S.dndChecked) return
+      S.dndBusy = true
+      S.dndBusySince = Date.now()
+      dndQuery.running = true
+    } else {
+      S.dndChecked = false
+      if (S.dndOwned) setDnd(false)
+    }
+  }
+
+  function onDndState(state) {
+    S.dndBusy = false
+    // The session may have been paused or skipped while we asked; the next
+    // tick sorts that out.
+    if (!(S.focusMode && S.phase === "work" && !S.paused)) return
+    S.dndChecked = true
+    // "on" means the user had already silenced things: not ours to undo.
+    if (state === "off") setDnd(true)
+  }
+
+  function setDnd(on) {
+    S.dndOwned = on
+    S.dndBusy = true
+    S.dndBusySince = Date.now()
+    dndSet.command = ["omarchy-shell", "notifications", "setDnd", on ? "on" : "off"]
+    dndSet.running = true
+    silencing = on
+    save()
+  }
+
+  function toggleFocusMode() {
+    S.focusMode = !S.focusMode
+    changed()
+  }
+
+  Process {
+    id: dndQuery
+    command: ["omarchy-shell", "notifications", "isDnd"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.onDndState(String(text || "").trim())
+    }
+  }
+
+  Process {
+    id: dndSet
+    onExited: {
+      S.dndBusy = false
+      Quickshell.execDetached(["omarchy-shell", "-q", "omarchy.indicators", "refresh"])
+    }
+  }
+
   function notifyFocusDone(task) {
     var lines = []
     if (task) {
@@ -159,8 +232,11 @@ BarWidget {
 
   // Task titles end up in the body, so pass argv straight to the programs
   // with no shell in between — there is nothing to quote or escape.
+  // omarchy-notification-send sends as "omarchy-action", which do-not-disturb
+  // lets through: the timer's own alerts must still arrive in focus mode.
+  // The body is always taken as text, even if it starts with a dash.
   function notify(title, body, soundName) {
-    Quickshell.execDetached(["notify-send", "-a", "Pomodoro", "-i", "alarm-symbolic", "--", String(title), String(body)])
+    Quickshell.execDetached(["omarchy-notification-send", "-g", "󱎫", "-u", "normal", String(title), String(body)])
     if (root.sound)
       Quickshell.execDetached(["paplay", "/usr/share/sounds/freedesktop/stereo/" + soundName + ".oga"])
   }
@@ -248,7 +324,8 @@ BarWidget {
     var a = S.activeTask()
     return JSON.stringify({
       phase: S.phase, paused: S.paused, secondsLeft: root.secondsLeft,
-      task: a ? a.title : "", today: S.today().pomodoros, goal: root.dailyGoal
+      task: a ? a.title : "", today: S.today().pomodoros, goal: root.dailyGoal,
+      focusMode: S.focusMode, silencing: S.dndOwned
     })
   }
 
@@ -362,6 +439,7 @@ BarWidget {
     function open(): void { root.open() }
     function close(): void { root.close() }
     function status(): string { return root.statusLine() }
+    function focus(): void { root.toggleFocusMode() }
   }
 
   implicitWidth: button.implicitWidth
@@ -379,6 +457,7 @@ BarWidget {
         : root.phaseName + (root.paused ? " (paused)" : "") + " · " + root.clockText + " left")
       + (root.activeTask ? "\nTask: " + root.activeTask.title + " (" + root.activeTask.pomodoros + "/" + root.activeTask.estimate + ")" : "")
       + "\nToday: " + root.todayPomodoros + "/" + root.dailyGoal + " 🍅 · " + S.formatMinutes(root.todayMinutes)
+      + (root.focusMode ? (root.silencing ? "\nFocus mode: notifications silenced" : "\nFocus mode: on") : "")
       + "\nLeft: " + (root.running ? "pause" : (root.phase === "idle" ? "start" : "resume")) + " · Middle: skip · Right: tasks"
 
     onPressed: function(b) {

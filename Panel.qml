@@ -16,7 +16,8 @@ import "State.js" as S
 //   n      new task           e / F2  rename
 //   + / -  estimate           [ / ]  −/+ 5 minutes
 //   s      skip phase         R  reset timer
-//   C      clear done tasks   Esc  close
+//   C      clear done tasks   f  focus mode (silence notifications)
+//   Esc    close
 Panel {
   id: root
   moduleName: "stradjazz.pomodoro"
@@ -169,6 +170,7 @@ Panel {
     else if (t === "s") host.skip()
     else if (t === "R") host.reset()
     else if (t === "C") host.clearDone()
+    else if (t === "f") host.toggleFocusMode()
     else return
     event.accepted = true
   }
@@ -423,6 +425,57 @@ Panel {
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
+          }
+        }
+
+        // ---- Focus mode: do-not-disturb while a focus session runs.
+        Item {
+          width: parent.width
+          height: Math.max(focusLabel.implicitHeight, focusSwitch.implicitHeight)
+
+          Text {
+            id: focusLabel
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            textFormat: Text.PlainText
+            text: "FOCUS MODE"
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            font.letterSpacing: 1.2
+          }
+
+          Text {
+            anchors.left: focusLabel.right
+            anchors.leftMargin: Style.space(12)
+            anchors.right: focusSwitch.left
+            anchors.rightMargin: Style.space(8)
+            anchors.verticalCenter: parent.verticalCenter
+            textFormat: Text.PlainText
+            text: !root.host ? ""
+              : (root.host.silencing ? "󰂛 Notifications silenced until the break"
+                : (root.host.focusMode ? "Silences notifications while you focus"
+                  : "Off · notifications come through"))
+            color: root.host && root.host.silencing ? root.focusColor : root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            elide: Text.ElideRight
+          }
+
+          ToggleSwitch {
+            id: focusSwitch
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            checked: !!root.host && root.host.focusMode
+            foreground: root.fg
+            onToggled: if (root.host) root.host.toggleFocusMode()
+
+            PanelToolTip {
+              visible: focusSwitch.containsMouse
+              text: "Turn on do-not-disturb during focus sessions (f)"
+              fontFamily: root.fontFamily
+            }
           }
         }
 
