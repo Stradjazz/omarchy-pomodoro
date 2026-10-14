@@ -2,7 +2,7 @@
 
 A pomodoro timer for the [Omarchy](https://omarchy.org) bar with a built-in task list, daily goal, and focus history.
 
-![Pomodoro panel](screenshots/panel.png)
+![Pomodoro panel](preview.png)
 
 ## Features
 
@@ -30,6 +30,28 @@ o.bind("SUPER + CTRL + SHIFT + U", "Pomodoro start/pause", "omarchy-shell stradj
 ```
 
 Update with `omarchy plugin update stradjazz.pomodoro`.
+
+## Remove
+
+```bash
+omarchy plugin remove stradjazz.pomodoro
+```
+
+This removes the widget from the bar and deletes the plugin folder. Two things are left for you to delete if you want:
+
+- Your tasks and focus history in `~/.local/state/stradjazz.pomodoro/`: `rm -rf ~/.local/state/stradjazz.pomodoro`
+- The two optional keybindings, if you added them to `~/.config/hypr/bindings.lua`
+
+The plugin never edits your configuration files itself. It only writes its own state file.
+
+## Dependencies
+
+Everything it needs ships with Omarchy:
+
+- **Omarchy shell (Quattro / 4.x)**: Quickshell-based bar plugin API
+- **`notify-send`** (libnotify): end-of-phase notifications
+- **`paplay`** (libpulse, via PipeWire): optional end-of-phase sound, played from the freedesktop sound theme in `/usr/share/sounds/freedesktop/stereo/`. Turn it off with `"sound": false`
+- **A Nerd Font**: icons. Omarchy's default font includes them
 
 ## Panel keys
 
