@@ -755,7 +755,7 @@ Panel {
           wrapMode: Text.Wrap
           text: root.fieldFocused
             ? "⏎ save · esc / ↓ back to list"
-            : "space start/pause · ⏎ focus task · n new · e rename · d done · x delete · J/K reorder · +/- estimate · s skip · [ ] ∓5m · C clear done"
+            : "space start/pause · ⏎ focus task · n new · e rename · d done · x delete · J/K reorder · +/- estimate · s skip · [ ] ∓5m · C clear done · f focus mode"
           color: Qt.darker(root.fg, 1.9)
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
